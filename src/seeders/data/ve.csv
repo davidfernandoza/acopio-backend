@@ -1,0 +1,174 @@
+city,lat,lng,country,iso2,admin_name,capital,population,population_proper
+Caracas,10.5061,-66.9144,Venezuela,VE,Miranda,primary,2245744,2245744
+Valencia,10.1667,-68.0000,Venezuela,VE,Carabobo,admin,1958724,1484430
+Maracaibo,10.6333,-71.6333,Venezuela,VE,Zulia,admin,1551539,1551539
+Maracay,10.2469,-67.5958,Venezuela,VE,Aragua,admin,1102088,1102088
+Barquisimeto,10.0678,-69.3467,Venezuela,VE,Lara,admin,1059092,1059092
+Maturín,9.7423,-63.1889,Venezuela,VE,Monagas,admin,753254,753254
+Ciudad Guayana,8.3224,-62.6897,Venezuela,VE,Bolívar,minor,751331,751331
+Catia La Mar,10.6038,-67.0303,Venezuela,VE,La Guaira,minor,661897,661897
+Santa Teresa del Tuy,10.2333,-66.6500,Venezuela,VE,Miranda,minor,525321,525321
+Barcelona,10.1362,-64.6862,Venezuela,VE,Anzoátegui,admin,454200,454200
+Petare,10.4833,-66.8167,Venezuela,VE,Miranda,minor,448861,448861
+Ciudad Bolívar,8.1029,-63.5470,Venezuela,VE,Bolívar,admin,422578,422578
+Barinas,8.6333,-70.2167,Venezuela,VE,Barinas,admin,397279,397279
+Cumaná,10.4500,-64.1667,Venezuela,VE,Sucre,admin,374706,374706
+Cabimas,10.4000,-71.4333,Venezuela,VE,Zulia,minor,351735,351735
+Los Teques,10.3411,-67.0406,Venezuela,VE,Miranda,admin,332725,332725
+Puerto La Cruz,10.2167,-64.6167,Venezuela,VE,Anzoátegui,minor,306261,306261
+Punto Fijo,11.7167,-70.1833,Venezuela,VE,Falcón,minor,287558,287558
+San Cristóbal,7.7682,-72.2322,Venezuela,VE,Táchira,admin,285872,285872
+Coro,11.3950,-69.6816,Venezuela,VE,Falcón,admin,265569,265569
+Turmero,10.2283,-67.4753,Venezuela,VE,Aragua,minor,254880,254880
+Valera,9.3206,-70.6078,Venezuela,VE,Trujillo,minor,250000,250000
+Baruta,10.4780,-66.8618,Venezuela,VE,Miranda,minor,240755,240755
+San Felipe,10.3353,-68.7458,Venezuela,VE,Yaracuy,admin,220786,220786
+Cúa,10.1667,-66.8833,Venezuela,VE,Miranda,minor,214823,214823
+La Victoria,10.2278,-67.3336,Venezuela,VE,Aragua,minor,214492,214492
+El Tigre,8.8858,-64.2611,Venezuela,VE,Anzoátegui,minor,213524,213524
+Puerto Cabello,10.4667,-68.0167,Venezuela,VE,Carabobo,minor,209080,209080
+Guarenas,10.4739,-66.5383,Venezuela,VE,Miranda,minor,208663,208663
+La Guaira,10.6000,-66.9331,Venezuela,VE,La Guaira,admin,203520,203520
+Guacara,10.2333,-67.8833,Venezuela,VE,Carabobo,minor,200212,200212
+Mérida,8.5833,-71.1333,Venezuela,VE,Mérida,admin,199878,199878
+Tocuyito,10.0889,-68.0922,Venezuela,VE,Carabobo,minor,197446,197446
+Acarigua,9.5597,-69.2019,Venezuela,VE,Portuguesa,minor,195637,195637
+San Fernando,7.8878,-67.4724,Venezuela,VE,Apure,admin,194274,194274
+Guanare,9.0436,-69.7489,Venezuela,VE,Portuguesa,admin,192644,192644
+Araure,9.5667,-69.2167,Venezuela,VE,Portuguesa,minor,188800,188800
+Guatire,10.4717,-66.5406,Venezuela,VE,Miranda,minor,187262,187262
+San Diego,10.2558,-67.9539,Venezuela,VE,Carabobo,minor,187215,187215
+Carúpano,10.6722,-63.2403,Venezuela,VE,Sucre,minor,173877,173877
+Santa Rita,10.2003,-67.5514,Venezuela,VE,Aragua,minor,169158,169158
+Upata,8.0073,-62.3978,Venezuela,VE,Bolívar,minor,168856,98274
+Calabozo,8.9219,-67.4283,Venezuela,VE,Guárico,minor,168605,168605
+Anaco,9.4333,-64.4667,Venezuela,VE,Anzoátegui,minor,162704,162704
+Naguanagua,10.2540,-68.0109,Venezuela,VE,Carabobo,minor,157437,157437
+Palo Negro,10.1600,-67.5582,Venezuela,VE,Aragua,minor,153706,153706
+Ocumare del Tuy,10.1136,-66.7814,Venezuela,VE,Miranda,minor,150000,150000
+Villa de Cura,10.0386,-67.4894,Venezuela,VE,Aragua,minor,145098,145098
+Yaritagua,10.0753,-69.1283,Venezuela,VE,Yaracuy,minor,140256,140256
+Los Guayos,10.1833,-67.9333,Venezuela,VE,Carabobo,minor,130345,130345
+Táriba,7.8167,-72.2167,Venezuela,VE,Táchira,minor,128590,128590
+Guasdualito,7.2467,-70.7292,Venezuela,VE,Apure,minor,128025,128025
+Cagua,10.1875,-67.4611,Venezuela,VE,Aragua,minor,122571,122571
+Ciudad Ojeda,10.2000,-71.3000,Venezuela,VE,Zulia,minor,122124,122124
+Porlamar,10.9556,-63.8478,Venezuela,VE,Nueva Esparta,minor,120924,120924
+Mariara,10.2936,-67.7111,Venezuela,VE,Carabobo,minor,120861,120861
+San Juan de los Morros,9.8864,-67.3448,Venezuela,VE,Guárico,admin,120111,120111
+San Carlos,9.6500,-68.5833,Venezuela,VE,Cojedes,admin,120000,120000
+Charallave,10.2431,-66.8622,Venezuela,VE,Miranda,minor,117707,117707
+La Asunción,11.0333,-63.8628,Venezuela,VE,Nueva Esparta,admin,117513,117513
+Valle de La Pascua,9.2033,-66.0103,Venezuela,VE,Guárico,minor,115902,115902
+Carora,10.1692,-70.0783,Venezuela,VE,Lara,minor,112600,112600
+Santa Lucía,10.2606,-66.6639,Venezuela,VE,Miranda,minor,112357,112357
+Trujillo,9.3658,-70.4369,Venezuela,VE,Trujillo,admin,110920,110920
+Quíbor,9.9281,-69.5778,Venezuela,VE,Lara,minor,110536,110536
+Socopó,8.2322,-70.8206,Venezuela,VE,Barinas,minor,110512,110512
+Tinaquillo,9.9167,-68.3000,Venezuela,VE,Cojedes,minor,110000,110000
+Ejido,8.5466,-71.2409,Venezuela,VE,Mérida,minor,107056,107056
+El Limón,10.3003,-67.6336,Venezuela,VE,Aragua,minor,106206,106206
+Boconó,9.2461,-70.2617,Venezuela,VE,Trujillo,minor,100240,100240
+Punta de Mata,9.6866,-63.6110,Venezuela,VE,Monagas,minor,100000,100000
+Caucagua,10.2822,-66.3772,Venezuela,VE,Miranda,minor,100000,100000
+Rubio,7.7000,-72.3500,Venezuela,VE,Táchira,minor,95041,95041
+El Hatillo,10.4333,-66.8000,Venezuela,VE,Miranda,minor,92900,92900
+Tumeremo,7.2990,-61.5044,Venezuela,VE,Bolívar,minor,90384,90384
+Cantaura,9.3005,-64.3564,Venezuela,VE,Anzoátegui,minor,89552,89552
+La Grita,8.1333,-71.9833,Venezuela,VE,Táchira,minor,88450,88450
+Maiquetía,10.5958,-66.9772,Venezuela,VE,La Guaira,minor,87909,87909
+Tucupita,9.0575,-62.0452,Venezuela,VE,Delta Amacuro,admin,86487,86487
+Puerto Ayacucho,5.6631,-67.6264,Venezuela,VE,Amazonas,admin,80000,80000
+San Antonio de Los Altos,10.3744,-66.9669,Venezuela,VE,Miranda,minor,74422,74422
+Cabudare,10.0331,-69.2633,Venezuela,VE,Lara,minor,70578,70578
+La Villa del Rosario,10.3167,-72.3167,Venezuela,VE,Zulia,minor,65907,65907
+Caripito,10.1124,-63.1034,Venezuela,VE,Monagas,minor,64955,64955
+Machiques,10.0592,-72.5531,Venezuela,VE,Zulia,minor,63000,122734
+Zaraza,9.3394,-65.3167,Venezuela,VE,Guárico,minor,62027,62027
+San Antonio del Táchira,7.8145,-72.4431,Venezuela,VE,Táchira,minor,61630,61630
+Morón,10.4842,-68.2042,Venezuela,VE,Carabobo,minor,60482,60482
+Chivacoa,10.1600,-68.9097,Venezuela,VE,Yaracuy,minor,59059,59059
+Nirgua,10.0567,-68.6467,Venezuela,VE,Yaracuy,minor,58932,58932
+San Carlos del Zulia,9.0000,-71.9500,Venezuela,VE,Zulia,minor,56500,80000
+Las Tejerías,10.2500,-67.2000,Venezuela,VE,Aragua,minor,54392,54392
+Santa Rita,10.5367,-71.5108,Venezuela,VE,Zulia,minor,49194,49194
+Sanare,9.7822,-69.7931,Venezuela,VE,Lara,minor,48764,48764
+Caraballeda,10.6167,-66.8500,Venezuela,VE,La Guaira,minor,48622,48622
+El Valle del Espíritu Santo,10.9829,-63.8839,Venezuela,VE,Nueva Esparta,minor,45606,45606
+San Juan Bautista,11.0142,-63.9451,Venezuela,VE,Nueva Esparta,minor,43117,43117
+Tovar,8.3279,-71.7593,Venezuela,VE,Mérida,minor,41867,41867
+El Tocuyo,9.7822,-69.7931,Venezuela,VE,Lara,minor,41327,41327
+Altagracia de Orituco,9.8600,-66.3814,Venezuela,VE,Guárico,minor,40052,40052
+Güiria,10.5740,-62.2983,Venezuela,VE,Sucre,minor,40000,40000
+Cocorote,10.3216,-68.7824,Venezuela,VE,Yaracuy,minor,39310,39310
+Ospino,9.3000,-69.4500,Venezuela,VE,Portuguesa,minor,39215,39215
+Achaguas,7.7828,-68.2269,Venezuela,VE,Apure,minor,38523,38523
+San Francisco de Yare,10.1833,-66.7500,Venezuela,VE,Miranda,minor,38400,38400
+Santa Cruz,10.1819,-67.5025,Venezuela,VE,Aragua,minor,38316,38316
+San Mateo,10.2133,-67.4225,Venezuela,VE,Aragua,minor,38062,38062
+Ureña,7.9183,-72.4467,Venezuela,VE,Táchira,minor,37932,37932
+Colón,8.0378,-72.2519,Venezuela,VE,Táchira,minor,36925,36925
+Santa Ana,7.6453,-72.2758,Venezuela,VE,Táchira,minor,36925,36925
+Lecherías,10.1889,-64.6951,Venezuela,VE,Anzoátegui,minor,36450,36450
+Pampatar,10.9994,-63.7944,Venezuela,VE,Nueva Esparta,minor,35400,35400
+Guanta,10.2383,-64.5917,Venezuela,VE,Anzoátegui,minor,35000,35000
+Las Mercedes,9.1104,-66.3961,Venezuela,VE,Guárico,minor,33025,33025
+Escuque,9.2500,-70.7500,Venezuela,VE,Trujillo,minor,32901,32901
+Caicara del Orinoco,7.6255,-66.1611,Venezuela,VE,Bolívar,minor,31891,31891
+Santa Elena de Uairén,4.5959,-61.1110,Venezuela,VE,Bolívar,minor,29795,29795
+Juangriego,11.0833,-63.9667,Venezuela,VE,Nueva Esparta,minor,28256,28256
+Sabaneta,8.7522,-69.9325,Venezuela,VE,Barinas,minor,28000,28000
+Higuerote,10.4833,-66.1000,Venezuela,VE,Miranda,minor,27362,27362
+Elorza,7.0597,-69.4967,Venezuela,VE,Apure,minor,26800,26800
+Puerto Píritu,10.0667,-65.0500,Venezuela,VE,Anzoátegui,minor,25981,25981
+El Callao,7.3474,-61.8332,Venezuela,VE,Bolívar,minor,21769,21769
+Guasipati,7.4766,-61.8968,Venezuela,VE,Bolívar,minor,21165,21165
+La Colonia Tovar,10.4167,-67.2833,Venezuela,VE,Aragua,minor,21000,21000
+Motatán,9.3931,-70.5934,Venezuela,VE,Trujillo,minor,20162,20162
+Chichiriviche,10.9343,-68.2771,Venezuela,VE,Falcón,minor,18960,18960
+Camatagua,9.7911,-66.9081,Venezuela,VE,Aragua,minor,14819,14819
+El Socorro,8.9936,-65.7456,Venezuela,VE,Guárico,minor,14049,14049
+Tucacas,10.7978,-68.3175,Venezuela,VE,Falcón,minor,13901,13901
+Río Caribe,10.7008,-63.1086,Venezuela,VE,Sucre,minor,13667,13667
+San José de Guaribe,9.8602,-65.8131,Venezuela,VE,Guárico,minor,11426,11426
+Puerto Cumarebo,11.4861,-69.3503,Venezuela,VE,Falcón,minor,1583,1583
+San José de Guanipa,8.8833,-64.1500,Venezuela,VE,Anzoátegui,minor,85,85
+San Joaquín,10.2606,-67.7935,Venezuela,VE,Carabobo,minor,,
+Carrizal,10.3499,-66.9863,Venezuela,VE,Miranda,minor,,
+Duaca,10.2855,-69.1624,Venezuela,VE,Lara,minor,,
+Urachiche,10.1585,-69.0078,Venezuela,VE,Yaracuy,minor,,
+El Vigía,8.6135,-71.6570,Venezuela,VE,Mérida,minor,,
+Tabay,8.6317,-71.0783,Venezuela,VE,Mérida,minor,,
+Tía Juana,10.2593,-71.3634,Venezuela,VE,Zulia,minor,,
+San José de Barlovento,10.3000,-66.0000,Venezuela,VE,Miranda,minor,,
+San Rafael de Onoto,9.6753,-68.9728,Venezuela,VE,Portuguesa,minor,,
+Barinitas,8.7617,-70.4120,Venezuela,VE,Barinas,minor,,
+San Rafael de El Moján,10.9667,-71.7333,Venezuela,VE,Zulia,minor,,
+Los Puertos de Altagracia,10.6744,-71.5138,Venezuela,VE,Zulia,minor,,
+La Fría,8.2189,-72.2483,Venezuela,VE,Táchira,minor,,
+San Sebastián,9.9406,-67.1692,Venezuela,VE,Aragua,minor,,
+Villa Bruzual,9.3306,-69.1208,Venezuela,VE,Portuguesa,minor,,
+Píritu,9.3708,-69.2103,Venezuela,VE,Portuguesa,minor,,
+Timotes,8.9822,-70.7393,Venezuela,VE,Mérida,minor,,
+Aroa,10.4395,-68.8950,Venezuela,VE,Yaracuy,minor,,
+Tinaco,9.6992,-68.4323,Venezuela,VE,Cojedes,minor,,
+Coloncito,8.3253,-72.0895,Venezuela,VE,Táchira,minor,,
+Camaguán,8.1073,-67.6074,Venezuela,VE,Guárico,minor,,
+Barrancas,8.6989,-62.1966,Venezuela,VE,Monagas,minor,,
+Tucupido,9.2730,-65.7715,Venezuela,VE,Guárico,minor,,
+Temblador,9.0052,-62.6449,Venezuela,VE,Monagas,minor,,
+Santa Bárbara,7.8120,-71.1787,Venezuela,VE,Barinas,minor,,
+El Sombrero,9.3863,-67.0582,Venezuela,VE,Guárico,minor,,
+Las Vegas,9.5372,-68.6302,Venezuela,VE,Cojedes,minor,,
+Ciudad Bolivia,8.3530,-70.5712,Venezuela,VE,Barinas,minor,,
+Encontrados,9.0633,-72.2339,Venezuela,VE,Zulia,minor,,
+Guanarito,8.6962,-69.2083,Venezuela,VE,Portuguesa,minor,,
+Pariaguán,8.8436,-64.7105,Venezuela,VE,Anzoátegui,minor,,
+Ortiz,9.6139,-67.2867,Venezuela,VE,Guárico,minor,,
+Soledad,8.1621,-63.5654,Venezuela,VE,Anzoátegui,minor,,
+El Baúl,8.9622,-68.2951,Venezuela,VE,Cojedes,minor,,
+Chacao,10.4958,-66.8537,Venezuela,VE,Miranda,minor,,
+Palmira,7.8406,-72.2336,Venezuela,VE,Táchira,minor,,
+Capacho Viejo,7.8281,-72.3203,Venezuela,VE,Táchira,minor,,
+Capacho Nuevo,7.8247,-72.3084,Venezuela,VE,Táchira,minor,,
+La Plaza de Paraguachí,11.1076,-63.8594,Venezuela,VE,Nueva Esparta,minor,,
