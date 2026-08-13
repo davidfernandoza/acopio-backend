@@ -12,9 +12,21 @@ ensureUploadDirectories();
 
 const app = express();
 
+const allowedOrigins = Array.from(
+  new Set(
+    [appConfig.frontendUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'].filter(Boolean)
+  )
+);
+
 app.use(
   cors({
-    origin: appConfig.frontendUrl,
+    origin(requestOrigin, callback) {
+      if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   })
 );

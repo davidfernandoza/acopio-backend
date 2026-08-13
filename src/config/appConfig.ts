@@ -10,7 +10,7 @@ export const appConfig = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
-  supportEmail: process.env.SUPPORT_EMAIL || 'soporte@acopio.com',
+  supportEmail: process.env.SUPPORT_EMAIL || 'soporte.acopio1@gmail.com',
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: Number(process.env.SMTP_PORT || 587),
