@@ -14,20 +14,41 @@ export interface AuthenticatedRequest extends Request {
   authUser?: AuthUserPayload;
 }
 
+function readAuthUserFromHeader(request: AuthenticatedRequest): AuthUserPayload | undefined {
+  const authorizationHeader = request.headers.authorization;
+  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    return undefined;
+  }
+
+  const token = authorizationHeader.slice('Bearer '.length);
+  return jwt.verify(token, appConfig.jwtSecret) as AuthUserPayload;
+}
+
+export function optionalAuth(
+  request: AuthenticatedRequest,
+  _response: Response,
+  next: NextFunction
+): void {
+  try {
+    request.authUser = readAuthUserFromHeader(request);
+  } catch {
+    request.authUser = undefined;
+  }
+  next();
+}
+
 export function requireAuth(
   request: AuthenticatedRequest,
   _response: Response,
   next: NextFunction
 ): void {
   try {
-    const authorizationHeader = request.headers.authorization;
-    if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    const authUser = readAuthUserFromHeader(request);
+    if (!authUser) {
       throw new HttpError(401, 'Authentication required');
     }
 
-    const token = authorizationHeader.slice('Bearer '.length);
-    const decodedToken = jwt.verify(token, appConfig.jwtSecret) as AuthUserPayload;
-    request.authUser = decodedToken;
+    request.authUser = authUser;
     next();
   } catch (error) {
     if (error instanceof HttpError) {

@@ -6,7 +6,7 @@
  * - Venezuela: data/ve.csv
  * Regenerar JSON: npm run geo:build
  */
-const geoData = require('./data/geo-colombia-venezuela.json');
+const geoData = require('../data/geo-colombia-venezuela.json');
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {

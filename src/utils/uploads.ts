@@ -6,6 +6,7 @@ import { HttpError } from '../middlewares/errorHandler';
 import { appConfig } from '../config/appConfig';
 
 export const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+export const maxAcopioGalleryImages = 7;
 
 export function ensureUploadDirectories() {
   const directories = [
@@ -43,7 +44,7 @@ const needQrFields = Array.from({ length: 20 }, (_unused, needIndex) => ({
 
 export const createAcopioUploadFields = [
   { name: 'avatar', maxCount: 1 },
-  { name: 'images', maxCount: 3 },
+  { name: 'images', maxCount: maxAcopioGalleryImages },
   ...needQrFields,
 ];
 
@@ -51,9 +52,32 @@ export const uploadAcopioMedia = multer({
   storage: memoryStorage,
   limits: {
     fileSize: 5 * 1024 * 1024,
-    files: 24,
+    files: 32,
   },
   fileFilter,
+});
+
+function excelFileFilter(
+  _request: Request,
+  file: Express.Multer.File,
+  callback: multer.FileFilterCallback
+) {
+  const originalName = file.originalname.toLowerCase();
+  const hasExcelExtension = originalName.endsWith('.xlsx') || originalName.endsWith('.xls');
+  if (!hasExcelExtension) {
+    callback(new HttpError(400, 'Only Excel files (.xlsx) are allowed'));
+    return;
+  }
+  callback(null, true);
+}
+
+export const uploadExcelFile = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+  },
+  fileFilter: excelFileFilter,
 });
 
 export function buildPublicUploadUrl(relativePath: string): string {

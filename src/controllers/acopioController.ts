@@ -4,9 +4,18 @@ import * as acopioService from '../services/acopioService';
 import {
   assertImageFiles,
   assertOptionalImageFile,
+  assertValidExcelFile,
   assertValidImageFile,
+  getUploadedExcelFile,
   getUploadedFiles,
 } from '../requests/fileValidation';
+import { maxAcopioGalleryImages } from '../utils/uploads';
+import {
+  buildExcelTemplateBuffer,
+  excelTemplateFileName,
+  ExcelTemplateType,
+} from '../utils/excelTemplates';
+import { parseExcelByTemplateType } from '../utils/excelImport';
 
 export async function createAcopio(
   request: AuthenticatedRequest,
@@ -16,7 +25,7 @@ export async function createAcopio(
   try {
     const uploaded = getUploadedFiles(request);
     assertOptionalImageFile(uploaded.avatar, 'avatar');
-    assertImageFiles(uploaded.images, 3);
+    assertImageFiles(uploaded.images, maxAcopioGalleryImages);
 
     const acopio = await acopioService.createAcopio(request.authUser!.id, request.body, {
       avatar: uploaded.avatar,
@@ -48,8 +57,17 @@ export async function getAcopio(
   next: NextFunction
 ): Promise<void> {
   try {
-    const acopio = await acopioService.getAcopioDetail(Number(request.params.idAcopio));
-    response.status(200).json(acopio);
+    const idAcopio = Number(request.params.idAcopio);
+    const acopio = await acopioService.getAcopioDetail(idAcopio);
+    const canManage = await acopioService.userCanManageAcopio(
+      idAcopio,
+      request.authUser?.id,
+      acopio.idOwner
+    );
+    response.status(200).json({
+      ...acopio,
+      canManage,
+    });
   } catch (error) {
     next(error);
   }
@@ -408,7 +426,7 @@ export async function addImages(
         : Array.isArray(request.files)
           ? (request.files as Express.Multer.File[])
           : [];
-    assertImageFiles(imageFiles, 3);
+    assertImageFiles(imageFiles, maxAcopioGalleryImages);
     if (!imageFiles.length) {
       response.status(400).json({ message: 'At least one image is required' });
       return;
@@ -447,6 +465,78 @@ export async function getCarousel(
   try {
     const carousel = await acopioService.getCarouselSlides(request);
     response.status(200).json(carousel);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function downloadExcelTemplate(
+  request: AuthenticatedRequest,
+  response: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const templateType = request.params.templateType as ExcelTemplateType;
+    const fileBuffer = await buildExcelTemplateBuffer(templateType);
+    const fileName = excelTemplateFileName(templateType);
+    response.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    response.status(200).send(fileBuffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function parseExcelTemplate(
+  request: AuthenticatedRequest,
+  response: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const excelFile = getUploadedExcelFile(request);
+    assertValidExcelFile(excelFile, 'file');
+    const templateType = request.params.templateType as ExcelTemplateType;
+    const parsedExcel = parseExcelByTemplateType(templateType, excelFile!.buffer);
+    response.status(200).json(parsedExcel);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function importNeedsExcel(
+  request: AuthenticatedRequest,
+  response: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const excelFile = getUploadedExcelFile(request);
+    assertValidExcelFile(excelFile, 'file');
+    const imported = await acopioService.importNeedsFromExcel(
+      Number(request.params.idAcopio),
+      excelFile!.buffer
+    );
+    response.status(201).json(imported);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function importOffersExcel(
+  request: AuthenticatedRequest,
+  response: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const excelFile = getUploadedExcelFile(request);
+    assertValidExcelFile(excelFile, 'file');
+    const imported = await acopioService.importOffersFromExcel(
+      Number(request.params.idAcopio),
+      excelFile!.buffer
+    );
+    response.status(201).json(imported);
   } catch (error) {
     next(error);
   }

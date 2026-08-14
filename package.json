@@ -29,6 +29,7 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "google-auth-library": "^9.15.1",
     "handlebars": "^4.7.9",
@@ -41,10 +42,10 @@
     "sequelize": "^6.37.5",
     "sequelize-cli": "^6.6.2",
     "sharp": "^0.35.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "tsx": "^4.19.3",
-    "xlsx": "^0.18.5"
+    "tsx": "^4.19.3"
   }
 }

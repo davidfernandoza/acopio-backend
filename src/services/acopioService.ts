@@ -10,6 +10,7 @@ import {
   City,
   Country,
   Department,
+  NeedCategory,
   User,
   sequelize,
 } from '../models';
@@ -19,7 +20,7 @@ import {
   hashPassword,
 } from './authService';
 import { sendManagerInvitationEmail } from './mailService';
-import { buildInitialsAvatarUrl, buildPublicUploadUrl } from '../utils/uploads';
+import { buildInitialsAvatarUrl, buildPublicUploadUrl, maxAcopioGalleryImages } from '../utils/uploads';
 import {
   deleteUploadFile,
   saveAcopioGalleryImage,
@@ -28,6 +29,8 @@ import {
 } from '../utils/fileStorage';
 import { getClientIp, resolveUserLocationFromIp } from './geoIpService';
 import { Request } from 'express';
+import { defaultProductIconKey, defaultTalentIconKey, maxMoneyNeedsPerAcopio } from '../utils/excelCatalog';
+import { parseNeedsExcel, parseOffersExcel } from '../utils/excelImport';
 
 async function assertUniqueAcopioName(
   name: string,
@@ -82,12 +85,62 @@ function emptyToNull(value: unknown): string | null {
   return String(value);
 }
 
-function buildNeedAttributes(idAcopio: number, payload: any) {
+type NeedWithCategory = AcopioNeed & { category?: NeedCategory | null };
+
+const needCategoryInclude = {
+  model: NeedCategory,
+  as: 'category',
+};
+
+function resolveNeedIconKey(payload: { needType?: string; iconKey?: string | null }) {
+  if (payload.needType === 'money') {
+    return 'bank';
+  }
+  if (payload.iconKey) {
+    return payload.iconKey;
+  }
+  if (payload.needType === 'talent') {
+    return defaultTalentIconKey;
+  }
+  return defaultProductIconKey;
+}
+
+async function resolveNeedCategoryId(
+  needType: string | undefined,
+  categoryKey: string | null | undefined,
+  transaction?: Transaction
+): Promise<number | null> {
+  if (needType !== 'product') {
+    return null;
+  }
+
+  const resolvedCategoryKey = categoryKey || 'sin_categoria';
+  const category = await NeedCategory.findOne({
+    where: { categoryKey: resolvedCategoryKey },
+    transaction,
+  });
+  if (!category) {
+    throw new HttpError(400, 'Categoría de producto inválida');
+  }
+  return category.id;
+}
+
+async function buildNeedAttributes(
+  idAcopio: number,
+  payload: any,
+  transaction?: Transaction
+) {
   const isMoney = payload.needType === 'money';
+  const idCategory = await resolveNeedCategoryId(
+    payload.needType,
+    payload.categoryKey,
+    transaction
+  );
   return {
     idAcopio,
+    idCategory,
     needType: payload.needType,
-    iconKey: isMoney ? 'bank' : payload.iconKey,
+    iconKey: resolveNeedIconKey(payload),
     name: payload.name,
     unit: emptyToNull(payload.unit),
     hasLimit: payload.hasLimit,
@@ -104,7 +157,7 @@ function buildNeedAttributes(idAcopio: number, payload: any) {
   };
 }
 
-function mapNeed(need: AcopioNeed) {
+function mapNeed(need: NeedWithCategory) {
   const targetQuantity = need.targetQuantity === null ? null : Number(need.targetQuantity);
   const receivedQuantity = Number(need.receivedQuantity);
   const limitReached =
@@ -113,6 +166,9 @@ function mapNeed(need: AcopioNeed) {
   return {
     id: need.id,
     idAcopio: need.idAcopio,
+    idCategory: need.idCategory,
+    categoryKey: need.category?.categoryKey || null,
+    categoryName: need.category?.name || null,
     needType: need.needType,
     iconKey: need.iconKey,
     name: need.name,
@@ -153,12 +209,83 @@ function mapContact(contact: AcopioContact & { country?: Country | null }) {
   };
 }
 
+function resolveScheduledStatus(
+  startsAt: Date | string | null,
+  endsAt: Date | string | null
+): 'open' | 'closed' {
+  const nowMs = Date.now();
+  const startTimeMs = startsAt ? new Date(startsAt).getTime() : Number.NaN;
+  const endTimeMs = endsAt ? new Date(endsAt).getTime() : Number.NaN;
+
+  if (!Number.isFinite(startTimeMs) || !Number.isFinite(endTimeMs)) {
+    return 'closed';
+  }
+  if (nowMs < startTimeMs || nowMs >= endTimeMs) {
+    return 'closed';
+  }
+  return 'open';
+}
+
+async function syncScheduledAcopioStatuses() {
+  await Acopio.update(
+    { openingMode: 'indefinite' },
+    { where: { openingMode: 'manual' } }
+  );
+
+  const now = new Date();
+  await Acopio.update(
+    { status: 'closed' },
+    {
+      where: {
+        openingMode: 'scheduled',
+        status: 'open',
+        [Op.or]: [{ endsAt: { [Op.lte]: now } }, { startsAt: { [Op.gt]: now } }],
+      },
+    }
+  );
+  await Acopio.update(
+    { status: 'open' },
+    {
+      where: {
+        openingMode: 'scheduled',
+        status: 'closed',
+        startsAt: { [Op.lte]: now },
+        endsAt: { [Op.gt]: now },
+      },
+    }
+  );
+}
+
+async function applyScheduledStatus(acopio: Acopio, transaction?: Transaction) {
+  if (acopio.openingMode === 'manual') {
+    await acopio.update({ openingMode: 'indefinite' }, { transaction });
+  }
+  if (acopio.openingMode === 'scheduled') {
+    const nextStatus = resolveScheduledStatus(acopio.startsAt, acopio.endsAt);
+    if (acopio.status !== nextStatus) {
+      await acopio.update({ status: nextStatus }, { transaction });
+    }
+  }
+}
+
 async function getAcopioOrFail(idAcopio: number, transaction?: Transaction) {
   const acopio = await Acopio.findByPk(idAcopio, { transaction });
   if (!acopio) {
     throw new HttpError(404, 'Acopio not found');
   }
   return acopio;
+}
+
+async function assertMoneyNeedsLimit(idAcopio: number) {
+  const moneyNeedsCount = await AcopioNeed.count({
+    where: { idAcopio, needType: 'money' },
+  });
+  if (moneyNeedsCount >= maxMoneyNeedsPerAcopio) {
+    throw new HttpError(
+      400,
+      `Solo se permiten ${maxMoneyNeedsPerAcopio} registros de dinero por acopio`
+    );
+  }
 }
 
 async function assertManagersPayloadForOwner(
@@ -233,9 +360,19 @@ async function validateCreateAcopioPayload(
     throw new HttpError(400, 'Debes agregar al menos una necesidad');
   }
 
+  const moneyNeedsCount = payload.needs.filter(
+    (need: { needType?: string }) => need.needType === 'money'
+  ).length;
+  if (moneyNeedsCount > maxMoneyNeedsPerAcopio) {
+    throw new HttpError(
+      400,
+      `Solo se permiten ${maxMoneyNeedsPerAcopio} registros de dinero por acopio`
+    );
+  }
+
   const galleryFiles = files?.images || [];
-  if (galleryFiles.length > 3) {
-    throw new HttpError(400, 'At most 3 images are allowed');
+  if (galleryFiles.length > maxAcopioGalleryImages) {
+    throw new HttpError(400, `At most ${maxAcopioGalleryImages} images are allowed`);
   }
 
   await assertUniqueAcopioName(String(payload.name).trim());
@@ -290,10 +427,13 @@ export async function createAcopio(
           idAddress: address.id,
           name: acopioName,
           description: payload.description || null,
-          status: payload.status || 'open',
+          status:
+            payload.openingMode === 'scheduled'
+              ? resolveScheduledStatus(payload.startsAt, payload.endsAt)
+              : payload.status || 'open',
           openingMode: payload.openingMode,
-          startsAt: payload.startsAt || null,
-          endsAt: payload.endsAt || null,
+          startsAt: payload.openingMode === 'scheduled' ? payload.startsAt : null,
+          endsAt: payload.openingMode === 'scheduled' ? payload.endsAt : null,
           responsibleName: payload.responsibleName,
           avatarPath: null,
           avatarUrl: initialsAvatarUrl,
@@ -347,7 +487,7 @@ export async function createAcopio(
         const needPayload = payload.needs[needIndex];
         const need = await AcopioNeed.create(
           {
-            ...buildNeedAttributes(acopio.id, needPayload),
+            ...(await buildNeedAttributes(acopio.id, needPayload, transaction)),
             qrPath: null,
           },
           { transaction }
@@ -414,6 +554,7 @@ export async function createAcopio(
 }
 
 export async function listAcopios() {
+  await syncScheduledAcopioStatuses();
   const acopios = await Acopio.findAll({
     include: [
       {
@@ -430,7 +571,7 @@ export async function listAcopios() {
         model: AcopioImage,
         as: 'images',
       },
-      { model: AcopioNeed, as: 'needs' },
+      { model: AcopioNeed, as: 'needs', include: [needCategoryInclude] },
       { model: AcopioOffer, as: 'offers' },
     ],
     order: [
@@ -452,7 +593,30 @@ export async function listAcopios() {
   });
 }
 
+export async function userCanManageAcopio(
+  idAcopio: number,
+  userId?: number,
+  idOwner?: number
+): Promise<boolean> {
+  if (!userId) {
+    return false;
+  }
+
+  if (idOwner === userId) {
+    return true;
+  }
+
+  const manager = await AcopioManager.findOne({
+    where: { idAcopio, idUser: userId },
+  });
+
+  return Boolean(manager);
+}
+
 export async function getAcopioDetail(idAcopio: number, transaction?: Transaction) {
+  const existingAcopio = await getAcopioOrFail(idAcopio, transaction);
+  await applyScheduledStatus(existingAcopio, transaction);
+
   const acopio = await Acopio.findByPk(idAcopio, {
     transaction,
     include: [
@@ -478,7 +642,7 @@ export async function getAcopioDetail(idAcopio: number, transaction?: Transactio
         as: 'contacts',
         include: [{ model: Country, as: 'country' }],
       },
-      { model: AcopioNeed, as: 'needs' },
+      { model: AcopioNeed, as: 'needs', include: [needCategoryInclude] },
       { model: AcopioOffer, as: 'offers' },
       { model: AcopioImage, as: 'images' },
       {
@@ -505,6 +669,9 @@ export async function getAcopioDetail(idAcopio: number, transaction?: Transactio
 }
 
 export async function getAcopioMap(idAcopio: number) {
+  const existingAcopio = await getAcopioOrFail(idAcopio);
+  await applyScheduledStatus(existingAcopio);
+
   const acopio = await Acopio.findByPk(idAcopio, {
     include: [
       {
@@ -544,6 +711,18 @@ export async function updateAcopio(idAcopio: number, payload: any) {
     acopioFields.name = acopioName;
   }
 
+  if (acopioFields.openingMode === 'indefinite') {
+    acopioFields.startsAt = null;
+    acopioFields.endsAt = null;
+  }
+
+  if (acopioFields.openingMode === 'scheduled') {
+    acopioFields.status = resolveScheduledStatus(
+      acopioFields.startsAt,
+      acopioFields.endsAt
+    );
+  }
+
   if (Object.keys(acopioFields).length) {
     await acopio.update(acopioFields);
   }
@@ -572,14 +751,23 @@ export async function updateAcopio(idAcopio: number, payload: any) {
 
 export async function updateAcopioStatus(idAcopio: number, status: 'open' | 'closed') {
   const acopio = await getAcopioOrFail(idAcopio);
+  if (acopio.openingMode === 'scheduled') {
+    throw new HttpError(
+      400,
+      'Este acopio se cierra automáticamente según las fechas. Actualiza la fecha de cierre para cambiar el estado.'
+    );
+  }
   await acopio.update({ status });
   return getAcopioDetail(idAcopio);
 }
 
 export async function listNeeds(idAcopio: number) {
   await getAcopioOrFail(idAcopio);
-  const needs = await AcopioNeed.findAll({ where: { idAcopio } });
-  return needs.map(mapNeed);
+  const needs = await AcopioNeed.findAll({
+    where: { idAcopio },
+    include: [needCategoryInclude],
+  });
+  return needs.map((need) => mapNeed(need as NeedWithCategory));
 }
 
 export async function createNeed(
@@ -588,8 +776,11 @@ export async function createNeed(
   qrFile?: Express.Multer.File
 ) {
   await getAcopioOrFail(idAcopio);
+  if (payload.needType === 'money') {
+    await assertMoneyNeedsLimit(idAcopio);
+  }
   const need = await AcopioNeed.create({
-    ...buildNeedAttributes(idAcopio, payload),
+    ...(await buildNeedAttributes(idAcopio, payload)),
     qrPath: null,
   });
 
@@ -598,25 +789,45 @@ export async function createNeed(
     await need.update({ qrPath: savedQr.relativePath });
   }
 
-  const createdNeed = await AcopioNeed.findByPk(need.id);
-  return mapNeed(createdNeed as AcopioNeed);
+  const createdNeed = await AcopioNeed.findByPk(need.id, {
+    include: [needCategoryInclude],
+  });
+  return mapNeed(createdNeed as NeedWithCategory);
 }
 
 export async function updateNeed(idAcopio: number, idNeed: number, payload: any) {
-  const need = await AcopioNeed.findOne({ where: { id: idNeed, idAcopio } });
+  const need = await AcopioNeed.findOne({
+    where: { id: idNeed, idAcopio },
+    include: [needCategoryInclude],
+  });
   if (!need) {
     throw new HttpError(404, 'Need not found');
   }
 
-  const nextHasLimit = payload.hasLimit ?? need.hasLimit;
+  if (payload.needType === 'money' && need.needType !== 'money') {
+    await assertMoneyNeedsLimit(idAcopio);
+  }
+
+  const { categoryKey, ...needFields } = payload;
+  const nextNeedType = needFields.needType || need.needType;
+  const nextHasLimit = needFields.hasLimit ?? need.hasLimit;
+  const nextCategoryKey =
+    categoryKey !== undefined ? categoryKey : (need as NeedWithCategory).category?.categoryKey;
+
   await need.update({
-    ...payload,
+    ...needFields,
+    iconKey: resolveNeedIconKey({
+      needType: nextNeedType,
+      iconKey: needFields.iconKey ?? need.iconKey,
+    }),
+    idCategory: await resolveNeedCategoryId(nextNeedType, nextCategoryKey),
     targetQuantity: nextHasLimit
-      ? payload.targetQuantity ?? need.targetQuantity
+      ? needFields.targetQuantity ?? need.targetQuantity
       : null,
   });
 
-  return mapNeed(need);
+  await need.reload({ include: [needCategoryInclude] });
+  return mapNeed(need as NeedWithCategory);
 }
 
 export async function deleteNeed(idAcopio: number, idNeed: number) {
@@ -717,11 +928,63 @@ export async function createOffer(idAcopio: number, payload: any) {
   return AcopioOffer.create({
     idAcopio,
     category: payload.category,
-    iconKey: payload.iconKey,
+    iconKey: payload.iconKey || defaultProductIconKey,
     name: payload.name,
     description: payload.description || null,
     isAvailable: payload.isAvailable ?? true,
   });
+}
+
+export async function importNeedsFromExcel(idAcopio: number, fileBuffer: Buffer) {
+  await getAcopioOrFail(idAcopio);
+  const importedNeeds = parseNeedsExcel(fileBuffer);
+
+  const createdNeeds = await sequelize.transaction(async (transaction: Transaction) => {
+    const savedNeeds = [];
+    for (const needPayload of importedNeeds) {
+      const need = await AcopioNeed.create(
+        {
+          ...(await buildNeedAttributes(idAcopio, needPayload, transaction)),
+          qrPath: null,
+        },
+        { transaction }
+      );
+      savedNeeds.push(need);
+    }
+    return savedNeeds;
+  });
+
+  const createdNeedIds = createdNeeds.map((need) => need.id);
+  const needsWithCategory = await AcopioNeed.findAll({
+    where: { id: { [Op.in]: createdNeedIds } },
+    include: [needCategoryInclude],
+  });
+
+  return {
+    importedCount: needsWithCategory.length,
+    items: needsWithCategory.map((need) => mapNeed(need as NeedWithCategory)),
+  };
+}
+
+export async function importOffersFromExcel(idAcopio: number, fileBuffer: Buffer) {
+  await getAcopioOrFail(idAcopio);
+  const importedOffers = parseOffersExcel(fileBuffer);
+
+  const createdOffers = await AcopioOffer.bulkCreate(
+    importedOffers.map((offerPayload) => ({
+      idAcopio,
+      category: offerPayload.category,
+      iconKey: offerPayload.iconKey,
+      name: offerPayload.name,
+      description: offerPayload.description,
+      isAvailable: true,
+    }))
+  );
+
+  return {
+    importedCount: createdOffers.length,
+    items: createdOffers,
+  };
 }
 
 export async function updateOffer(idAcopio: number, idOffer: number, payload: any) {
@@ -966,6 +1229,7 @@ export async function resendManagerInvitation(
 }
 
 export async function listOwnedAcopios(ownerId: number) {
+  await syncScheduledAcopioStatuses();
   const acopios = await Acopio.findAll({
     where: { idOwner: ownerId },
     attributes: ['id', 'name', 'status', 'responsibleName'],
@@ -981,6 +1245,7 @@ export async function listOwnedAcopios(ownerId: number) {
 }
 
 export async function listMyAcopios(userId: number) {
+  await syncScheduledAcopioStatuses();
   const managerMemberships = await AcopioManager.findAll({
     where: { idUser: userId },
     attributes: ['idAcopio'],
@@ -1113,8 +1378,8 @@ export async function updateAcopioAvatar(idAcopio: number, avatarFile: Express.M
 export async function addAcopioImages(idAcopio: number, imageFiles: Express.Multer.File[]) {
   await getAcopioOrFail(idAcopio);
   const existingCount = await AcopioImage.count({ where: { idAcopio } });
-  if (existingCount + imageFiles.length > 3) {
-    throw new HttpError(400, 'Acopio can have at most 3 images');
+  if (existingCount + imageFiles.length > maxAcopioGalleryImages) {
+    throw new HttpError(400, `Acopio can have at most ${maxAcopioGalleryImages} images`);
   }
 
   const existingImages = await AcopioImage.findAll({
@@ -1150,6 +1415,7 @@ export async function deleteAcopioImage(idAcopio: number, idImage: number) {
 }
 
 export async function getCarouselSlides(request: Request) {
+  await syncScheduledAcopioStatuses();
   const clientIp = getClientIp(request);
   const userIpLocation = await resolveUserLocationFromIp(clientIp);
   const matchedCity = userIpLocation.city;

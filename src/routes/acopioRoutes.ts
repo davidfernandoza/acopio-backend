@@ -1,14 +1,21 @@
 import { Router } from 'express';
 import * as acopioController from '../controllers/acopioController';
-import { requireAcopioManager, requireAcopioOwner, requireAuth } from '../middlewares/auth';
+import {
+  optionalAuth,
+  requireAcopioManager,
+  requireAcopioOwner,
+  requireAuth,
+} from '../middlewares/auth';
 import { validateRequest } from '../middlewares/validateRequest';
 import { parseMultipartAcopioBody } from '../middlewares/parseMultipartAcopioBody';
-import { uploadAcopioMedia, createAcopioUploadFields } from '../utils/uploads';
+import { uploadAcopioMedia, createAcopioUploadFields, maxAcopioGalleryImages, uploadExcelFile } from '../utils/uploads';
 import {
   createAcopioBodySchema,
   createContactBodySchema,
   createNeedBodySchema,
   createOfferBodySchema,
+  excelTemplateTypeParamsSchema,
+  excelUploadBodySchema,
   idAcopioAndIdParamsSchema,
   idAcopioAndIdUserParamsSchema,
   idAcopioParamsSchema,
@@ -27,6 +34,22 @@ acopioRouter.get('/carousel', acopioController.getCarousel);
 
 acopioRouter.get('/', acopioController.listAcopios);
 
+acopioRouter.get(
+  '/excel-templates/:templateType',
+  requireAuth,
+  validateRequest(excelTemplateTypeParamsSchema, 'params'),
+  acopioController.downloadExcelTemplate
+);
+
+acopioRouter.post(
+  '/excel-templates/:templateType/parse',
+  requireAuth,
+  validateRequest(excelTemplateTypeParamsSchema, 'params'),
+  uploadExcelFile.single('file'),
+  validateRequest(excelUploadBodySchema, 'body'),
+  acopioController.parseExcelTemplate
+);
+
 acopioRouter.post(
   '/',
   requireAuth,
@@ -38,6 +61,7 @@ acopioRouter.post(
 
 acopioRouter.get(
   '/:idAcopio',
+  optionalAuth,
   validateRequest(idAcopioParamsSchema, 'params'),
   acopioController.getAcopio
 );
@@ -80,7 +104,7 @@ acopioRouter.post(
   requireAuth,
   validateRequest(idAcopioParamsSchema, 'params'),
   requireAcopioManager,
-  uploadAcopioMedia.array('images', 3),
+  uploadAcopioMedia.array('images', maxAcopioGalleryImages),
   acopioController.addImages
 );
 
@@ -96,6 +120,16 @@ acopioRouter.get(
   '/:idAcopio/needs',
   validateRequest(idAcopioParamsSchema, 'params'),
   acopioController.listNeeds
+);
+
+acopioRouter.post(
+  '/:idAcopio/needs/import',
+  requireAuth,
+  validateRequest(idAcopioParamsSchema, 'params'),
+  requireAcopioManager,
+  uploadExcelFile.single('file'),
+  validateRequest(excelUploadBodySchema, 'body'),
+  acopioController.importNeedsExcel
 );
 
 acopioRouter.post(
@@ -161,6 +195,16 @@ acopioRouter.get(
   '/:idAcopio/offers',
   validateRequest(idAcopioParamsSchema, 'params'),
   acopioController.listOffers
+);
+
+acopioRouter.post(
+  '/:idAcopio/offers/import',
+  requireAuth,
+  validateRequest(idAcopioParamsSchema, 'params'),
+  requireAcopioManager,
+  uploadExcelFile.single('file'),
+  validateRequest(excelUploadBodySchema, 'body'),
+  acopioController.importOffersExcel
 );
 
 acopioRouter.post(

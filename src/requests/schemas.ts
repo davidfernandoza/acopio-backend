@@ -15,6 +15,12 @@ export const recoverPasswordBodySchema = Joi.object({
 
 export const emptyBodySchema = Joi.object({}).unknown(false);
 
+export const excelUploadBodySchema = Joi.object({}).unknown(true);
+
+export const excelTemplateTypeParamsSchema = Joi.object({
+  templateType: Joi.string().valid('needs', 'offers').required(),
+});
+
 export const idCountryParamsSchema = Joi.object({
   idCountry: Joi.number().integer().positive().required(),
 });
@@ -67,6 +73,7 @@ const contactSchema = Joi.object({
 }, 'contact validation');
 
 const productIconKeys = [
+  'caja',
   'comida',
   'agua',
   'ropa',
@@ -93,14 +100,45 @@ const productIconKeys = [
   'otro',
 ];
 
+const productCategoryKeys = [
+  'cuidado_bienestar',
+  'mascotas',
+  'movilidad',
+  'medicamentos',
+  'alimentacion_hidratacion',
+  'construccion',
+  'transporte',
+  'sin_categoria',
+];
+
 const needSchema = Joi.object({
-  needType: Joi.string().valid('product', 'money').required(),
+  needType: Joi.string().valid('product', 'money', 'talent').required(),
+  categoryKey: Joi.when('needType', {
+    is: 'product',
+    then: Joi.string()
+      .valid(...productCategoryKeys)
+      .allow('', null)
+      .optional()
+      .default('sin_categoria'),
+    otherwise: Joi.valid(null, '').optional(),
+  }),
   iconKey: Joi.when('needType', {
-    is: 'money',
-    then: Joi.string().valid('bank').default('bank'),
+    switch: [
+      { is: 'money', then: Joi.string().valid('bank').default('bank') },
+      {
+        is: 'talent',
+        then: Joi.string()
+          .valid(...productIconKeys)
+          .allow('', null)
+          .optional()
+          .default('voluntarios'),
+      },
+    ],
     otherwise: Joi.string()
       .valid(...productIconKeys)
-      .required(),
+      .allow('', null)
+      .optional()
+      .default('caja'),
   }),
   name: Joi.string().trim().min(2).max(180).required(),
   unit: Joi.string().trim().max(40).allow(null, ''),
@@ -133,7 +171,9 @@ const offerSchema = Joi.object({
   category: Joi.string().trim().min(2).max(80).required(),
   iconKey: Joi.string()
     .valid(...productIconKeys)
-    .required(),
+    .allow('', null)
+    .optional()
+    .default('caja'),
   name: Joi.string().trim().min(2).max(180).required(),
   description: Joi.string().allow(null, ''),
   isAvailable: Joi.boolean().default(true),
@@ -152,7 +192,7 @@ export const createAcopioBodySchema = Joi.object({
   name: Joi.string().trim().min(2).max(180).required(),
   description: Joi.string().allow(null, ''),
   status: Joi.string().valid('open', 'closed').default('open'),
-  openingMode: Joi.string().valid('indefinite', 'scheduled', 'manual').required(),
+  openingMode: Joi.string().valid('indefinite', 'scheduled').required(),
   startsAt: Joi.when('openingMode', {
     is: 'scheduled',
     then: Joi.date().required(),
@@ -181,9 +221,17 @@ export const createAcopioBodySchema = Joi.object({
 export const updateAcopioBodySchema = Joi.object({
   name: Joi.string().trim().min(2).max(180),
   description: Joi.string().allow(null, ''),
-  openingMode: Joi.string().valid('indefinite', 'scheduled', 'manual'),
-  startsAt: Joi.date().allow(null),
-  endsAt: Joi.date().allow(null),
+  openingMode: Joi.string().valid('indefinite', 'scheduled'),
+  startsAt: Joi.when('openingMode', {
+    is: 'scheduled',
+    then: Joi.date().required(),
+    otherwise: Joi.date().allow(null),
+  }),
+  endsAt: Joi.when('openingMode', {
+    is: 'scheduled',
+    then: Joi.date().min(Joi.ref('startsAt')).required(),
+    otherwise: Joi.date().allow(null),
+  }),
   responsibleName: Joi.string().trim().min(2).max(180),
   address: addressSchema,
 }).min(1);
@@ -199,7 +247,10 @@ export const updateContactBodySchema = contactSchema;
 export const createNeedBodySchema = needSchema;
 
 export const updateNeedBodySchema = Joi.object({
-  needType: Joi.string().valid('product', 'money'),
+  needType: Joi.string().valid('product', 'money', 'talent'),
+  categoryKey: Joi.string()
+    .valid(...productCategoryKeys)
+    .allow(null, ''),
   iconKey: Joi.string().trim().max(40),
   name: Joi.string().trim().min(2).max(180),
   unit: Joi.string().trim().max(40).allow(null, ''),

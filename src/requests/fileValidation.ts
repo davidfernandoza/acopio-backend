@@ -32,6 +32,34 @@ export function assertImageFiles(files: Express.Multer.File[] | undefined, maxCo
   }
 }
 
+const allowedExcelMimeTypes = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/octet-stream',
+]);
+
+export function assertValidExcelFile(file: Express.Multer.File | undefined, fieldName: string) {
+  if (!file) {
+    throw new HttpError(400, `${fieldName} is required`);
+  }
+
+  const originalName = file.originalname.toLowerCase();
+  const hasExcelExtension = originalName.endsWith('.xlsx') || originalName.endsWith('.xls');
+  if (!hasExcelExtension) {
+    throw new HttpError(400, `${fieldName} must be an Excel file (.xlsx)`);
+  }
+  if (!allowedExcelMimeTypes.has(file.mimetype) && !hasExcelExtension) {
+    throw new HttpError(400, `${fieldName} must be an Excel file (.xlsx)`);
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new HttpError(400, `${fieldName} must be at most 5MB`);
+  }
+}
+
+export function getUploadedExcelFile(request: Request): Express.Multer.File | undefined {
+  return request.file as Express.Multer.File | undefined;
+}
+
 export function getUploadedFiles(request: Request): {
   avatar?: Express.Multer.File;
   images: Express.Multer.File[];

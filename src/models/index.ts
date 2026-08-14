@@ -117,13 +117,25 @@ export class AcopioContact extends Model<
   declare label: string | null;
 }
 
+export class NeedCategory extends Model<
+  InferAttributes<NeedCategory>,
+  InferCreationAttributes<NeedCategory>
+> {
+  declare id: CreationOptional<number>;
+  declare categoryKey: string;
+  declare name: string;
+  declare isDefault: CreationOptional<boolean>;
+  declare sortOrder: CreationOptional<number>;
+}
+
 export class AcopioNeed extends Model<
   InferAttributes<AcopioNeed>,
   InferCreationAttributes<AcopioNeed>
 > {
   declare id: CreationOptional<number>;
   declare idAcopio: ForeignKey<Acopio['id']>;
-  declare needType: 'product' | 'money';
+  declare idCategory: ForeignKey<NeedCategory['id']> | null;
+  declare needType: 'product' | 'money' | 'talent';
   declare iconKey: string;
   declare name: string;
   declare unit: string | null;
@@ -325,12 +337,43 @@ AcopioContact.init(
   { sequelize, tableName: 'acopio_contacts' }
 );
 
+NeedCategory.init(
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    categoryKey: {
+      type: DataTypes.STRING(80),
+      allowNull: false,
+      unique: true,
+      field: 'category_key',
+    },
+    name: { type: DataTypes.STRING(120), allowNull: false },
+    isDefault: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_default',
+    },
+    sortOrder: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      field: 'sort_order',
+    },
+  },
+  { sequelize, tableName: 'need_categories' }
+);
+
 AcopioNeed.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     idAcopio: { type: DataTypes.INTEGER, allowNull: false, field: 'id_acopio' },
+    idCategory: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'id_category',
+    },
     needType: {
-      type: DataTypes.ENUM('product', 'money'),
+      type: DataTypes.ENUM('product', 'money', 'talent'),
       allowNull: false,
       field: 'need_type',
     },
@@ -442,6 +485,8 @@ AcopioImage.belongsTo(Acopio, { foreignKey: 'idAcopio', as: 'acopio' });
 
 Acopio.hasMany(AcopioNeed, { foreignKey: 'idAcopio', as: 'needs' });
 AcopioNeed.belongsTo(Acopio, { foreignKey: 'idAcopio', as: 'acopio' });
+NeedCategory.hasMany(AcopioNeed, { foreignKey: 'idCategory', as: 'needs' });
+AcopioNeed.belongsTo(NeedCategory, { foreignKey: 'idCategory', as: 'category' });
 
 Acopio.hasMany(AcopioOffer, { foreignKey: 'idAcopio', as: 'offers' });
 AcopioOffer.belongsTo(Acopio, { foreignKey: 'idAcopio', as: 'acopio' });
@@ -460,6 +505,7 @@ export const models = {
   Acopio,
   AcopioImage,
   AcopioContact,
+  NeedCategory,
   AcopioNeed,
   AcopioOffer,
   AcopioManager,
