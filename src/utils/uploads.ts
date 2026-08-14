@@ -3,6 +3,7 @@ import fs from 'fs';
 import multer from 'multer';
 import { Request } from 'express';
 import { HttpError } from '../middlewares/errorHandler';
+import { appConfig } from '../config/appConfig';
 
 export const uploadsRoot = path.resolve(process.cwd(), 'uploads');
 
@@ -57,6 +58,16 @@ export const uploadAcopioMedia = multer({
 
 export function buildPublicUploadUrl(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    return normalized;
+  }
+
+  const r2PublicUrl = appConfig.r2.publicUrl;
+  const r2Prefix = appConfig.r2.prefix;
+  if (r2PublicUrl && (!r2Prefix || normalized === r2Prefix || normalized.startsWith(`${r2Prefix}/`))) {
+    return `${r2PublicUrl}/${normalized}`;
+  }
+
   return `/uploads/${normalized}`;
 }
 

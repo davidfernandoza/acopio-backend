@@ -25,4 +25,13 @@ export const appConfig = {
     host: process.env.DATABASE_HOST || '127.0.0.1',
     port: Number(process.env.DATABASE_PORT || 5432),
   },
+  r2: {
+    accountId: process.env.R2_ACCOUNT_ID || '',
+    endpoint: process.env.R2_ENDPOINT || '',
+    bucket: process.env.R2_BUCKET || 'acopio',
+    prefix: (process.env.R2_PREFIX || 'images').replace(/^\/+|\/+$/g, ''),
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    publicUrl: (process.env.R2_PUBLIC_URL || '').replace(/\/+$/g, ''),
+  },
 };

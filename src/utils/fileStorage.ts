@@ -6,6 +6,12 @@ import {
   ensureUploadDirectories,
   uploadsRoot,
 } from './uploads';
+import {
+  buildR2ObjectKey,
+  deleteR2Object,
+  isR2Configured,
+  uploadR2Object,
+} from './r2Storage';
 
 ensureUploadDirectories();
 
@@ -15,23 +21,71 @@ function extensionFromMime(mimeType: string): string {
   return 'jpg';
 }
 
+function mimeTypeFromExtension(extension: string): string {
+  if (extension === 'png') return 'image/png';
+  if (extension === 'webp') return 'image/webp';
+  return 'image/jpeg';
+}
+
+async function processImageBuffer(
+  file: Express.Multer.File,
+  resize: {
+    width: number;
+    height: number;
+    fit: 'cover' | 'inside';
+    withoutEnlargement?: boolean;
+  }
+): Promise<{ fileBuffer: Buffer; extension: string; mimeType: string }> {
+  const extension = extensionFromMime(file.mimetype);
+  const mimeType = mimeTypeFromExtension(extension);
+
+  const processedBuffer = await sharp(file.buffer)
+    .rotate()
+    .resize(resize.width, resize.height, {
+      fit: resize.fit,
+      withoutEnlargement: resize.withoutEnlargement,
+    })
+    .toFormat(extension === 'png' ? 'png' : extension === 'webp' ? 'webp' : 'jpeg', {
+      quality: 85,
+    })
+    .toBuffer();
+
+  return {
+    fileBuffer: processedBuffer,
+    extension,
+    mimeType,
+  };
+}
+
+async function persistProcessedFile(
+  relativePath: string,
+  fileBuffer: Buffer,
+  mimeType: string
+) {
+  if (isR2Configured()) {
+    await uploadR2Object(relativePath, fileBuffer, mimeType);
+    return;
+  }
+
+  const absolutePath = path.join(uploadsRoot, relativePath);
+  await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+  await fs.writeFile(absolutePath, fileBuffer);
+}
+
 export async function saveAvatarFile(
   file: Express.Multer.File,
   idAcopioOrTemp: string | number
 ): Promise<{ relativePath: string; publicUrl: string }> {
-  const extension = extensionFromMime(file.mimetype);
+  const { fileBuffer, extension, mimeType } = await processImageBuffer(file, {
+    width: 512,
+    height: 512,
+    fit: 'cover',
+  });
   const fileName = `avatar-${idAcopioOrTemp}-${Date.now()}.${extension}`;
-  const absolutePath = path.join(uploadsRoot, 'avatars', fileName);
+  const relativePath = buildR2ObjectKey(path.join('avatars', fileName).replace(/\\/g, '/'));
 
-  await sharp(file.buffer)
-    .rotate()
-    .resize(512, 512, { fit: 'cover' })
-    .toFormat(extension === 'png' ? 'png' : extension === 'webp' ? 'webp' : 'jpeg', {
-      quality: 85,
-    })
-    .toFile(absolutePath);
+  await persistProcessedFile(relativePath, fileBuffer, mimeType);
 
-  const relativePath = path.join('avatars', fileName).replace(/\\/g, '/');
   return {
     relativePath,
     publicUrl: buildPublicUploadUrl(relativePath),
@@ -43,24 +97,18 @@ export async function saveAcopioGalleryImage(
   idAcopio: number,
   sortOrder: number
 ): Promise<{ relativePath: string; publicUrl: string }> {
-  const acopioDirectory = path.join(uploadsRoot, 'acopios', String(idAcopio));
-  await fs.mkdir(acopioDirectory, { recursive: true });
-
-  const extension = extensionFromMime(file.mimetype);
+  const { fileBuffer, extension, mimeType } = await processImageBuffer(file, {
+    width: 1600,
+    height: 1600,
+    fit: 'inside',
+    withoutEnlargement: true,
+  });
   const fileName = `image-${sortOrder}-${Date.now()}.${extension}`;
-  const absolutePath = path.join(acopioDirectory, fileName);
+  const relativePath = buildR2ObjectKey(
+    path.join('acopios', String(idAcopio), fileName).replace(/\\/g, '/')
+  );
 
-  await sharp(file.buffer)
-    .rotate()
-    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-    .toFormat(extension === 'png' ? 'png' : extension === 'webp' ? 'webp' : 'jpeg', {
-      quality: 85,
-    })
-    .toFile(absolutePath);
-
-  const relativePath = path
-    .join('acopios', String(idAcopio), fileName)
-    .replace(/\\/g, '/');
+  await persistProcessedFile(relativePath, fileBuffer, mimeType);
 
   return {
     relativePath,
@@ -73,24 +121,18 @@ export async function saveNeedQrFile(
   idAcopio: number,
   idNeed: number
 ): Promise<{ relativePath: string; publicUrl: string }> {
-  const acopioDirectory = path.join(uploadsRoot, 'acopios', String(idAcopio));
-  await fs.mkdir(acopioDirectory, { recursive: true });
-
-  const extension = extensionFromMime(file.mimetype);
+  const { fileBuffer, extension, mimeType } = await processImageBuffer(file, {
+    width: 1200,
+    height: 1200,
+    fit: 'inside',
+    withoutEnlargement: true,
+  });
   const fileName = `need-qr-${idNeed}-${Date.now()}.${extension}`;
-  const absolutePath = path.join(acopioDirectory, fileName);
+  const relativePath = buildR2ObjectKey(
+    path.join('acopios', String(idAcopio), fileName).replace(/\\/g, '/')
+  );
 
-  await sharp(file.buffer)
-    .rotate()
-    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-    .toFormat(extension === 'png' ? 'png' : extension === 'webp' ? 'webp' : 'jpeg', {
-      quality: 85,
-    })
-    .toFile(absolutePath);
-
-  const relativePath = path
-    .join('acopios', String(idAcopio), fileName)
-    .replace(/\\/g, '/');
+  await persistProcessedFile(relativePath, fileBuffer, mimeType);
 
   return {
     relativePath,
@@ -102,10 +144,17 @@ export async function deleteUploadFile(relativePath: string | null | undefined) 
   if (!relativePath) {
     return;
   }
-  const absolutePath = path.join(uploadsRoot, relativePath);
+
+  const normalizedPath = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+
+  if (isR2Configured()) {
+    await deleteR2Object(buildR2ObjectKey(normalizedPath));
+  }
+
+  const absolutePath = path.join(uploadsRoot, normalizedPath);
   try {
     await fs.unlink(absolutePath);
   } catch {
-    // ignore missing files
+    // ignore missing local files
   }
 }

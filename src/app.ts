@@ -6,9 +6,17 @@ import authRoutes from './routes/authRoutes';
 import geoRoutes from './routes/geoRoutes';
 import acopioRoutes from './routes/acopioRoutes';
 import contactRoutes from './routes/contactRoutes';
-import { ensureUploadDirectories, uploadsRoot } from './utils/uploads';
+import { ensureUploadDirectories } from './utils/uploads';
+import { serveUploads } from './middlewares/serveUploads';
+import { isR2Configured } from './utils/r2Storage';
 
 ensureUploadDirectories();
+
+if (!isR2Configured()) {
+  console.warn(
+    'Cloudflare R2 is not configured. Images will be stored locally until R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are set.'
+  );
+}
 
 const app = express();
 
@@ -31,7 +39,7 @@ app.use(
   })
 );
 app.use(express.json());
-app.use('/uploads', express.static(uploadsRoot));
+app.use('/uploads', serveUploads);
 
 app.get('/health', (_request, response) => {
   response.status(200).json({ status: 'ok' });
