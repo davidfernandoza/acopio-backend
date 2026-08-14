@@ -6,7 +6,7 @@ import { HttpError } from '../middlewares/errorHandler';
 import { appConfig } from '../config/appConfig';
 
 export const uploadsRoot = path.resolve(process.cwd(), 'uploads');
-export const maxAcopioGalleryImages = 7;
+export const maxAcopioGalleryImages = 9;
 
 export function ensureUploadDirectories() {
   const directories = [
