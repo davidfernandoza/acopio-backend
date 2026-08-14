@@ -188,12 +188,59 @@ function mapNeed(need: NeedWithCategory) {
   };
 }
 
+function digitsOnly(value: string) {
+  return String(value).replace(/\D/g, '');
+}
+
+function buildContactAttributes(idAcopio: number, contact: any) {
+  if (contact.type === 'whatsapp') {
+    return {
+      idAcopio,
+      type: contact.type,
+      value: digitsOnly(contact.value),
+      idCountry: contact.idCountry,
+      localPrefix: null,
+      extension: null,
+      label: contact.label || null,
+    };
+  }
+
+  if (contact.type === 'landline') {
+    const extensionDigits = contact.extension ? digitsOnly(contact.extension) : '';
+    return {
+      idAcopio,
+      type: contact.type,
+      value: digitsOnly(contact.value),
+      idCountry: null,
+      localPrefix: digitsOnly(contact.localPrefix),
+      extension: extensionDigits || null,
+      label: contact.label || null,
+    };
+  }
+
+  return {
+    idAcopio,
+    type: contact.type,
+    value: String(contact.value).toLowerCase(),
+    idCountry: null,
+    localPrefix: null,
+    extension: null,
+    label: contact.label || null,
+  };
+}
+
 function mapContact(contact: AcopioContact & { country?: Country | null }) {
   const phoneCode = contact.country?.phoneCode || null;
-  const digits = String(contact.value).replace(/\D/g, '');
+  const digits = digitsOnly(contact.value);
   const whatsappLink =
     contact.type === 'whatsapp' && phoneCode
       ? `https://wa.me/${phoneCode.replace('+', '')}${digits}`
+      : null;
+  const telLink =
+    contact.type === 'landline' && contact.localPrefix
+      ? `tel:${contact.localPrefix}${digits}${
+          contact.extension ? `;ext=${contact.extension}` : ''
+        }`
       : null;
 
   return {
@@ -202,9 +249,12 @@ function mapContact(contact: AcopioContact & { country?: Country | null }) {
     type: contact.type,
     value: contact.value,
     idCountry: contact.idCountry,
+    localPrefix: contact.localPrefix,
+    extension: contact.extension,
     label: contact.label,
     phoneCode,
     whatsappLink,
+    telLink,
     mailtoLink: contact.type === 'email' ? `mailto:${contact.value}` : null,
   };
 }
@@ -470,16 +520,7 @@ export async function createAcopio(
       }
 
       await AcopioContact.bulkCreate(
-        payload.contacts.map((contact: any) => ({
-          idAcopio: acopio.id,
-          type: contact.type,
-          value:
-            contact.type === 'whatsapp'
-              ? String(contact.value).replace(/\D/g, '')
-              : contact.value.toLowerCase(),
-          idCountry: contact.type === 'whatsapp' ? contact.idCountry : null,
-          label: contact.label || null,
-        })),
+        payload.contacts.map((contact: any) => buildContactAttributes(acopio.id, contact)),
         { transaction }
       );
 
@@ -858,16 +899,7 @@ export async function createContact(idAcopio: number, payload: any) {
     }
   }
 
-  const contact = await AcopioContact.create({
-    idAcopio,
-    type: payload.type,
-    value:
-      payload.type === 'whatsapp'
-        ? String(payload.value).replace(/\D/g, '')
-        : payload.value.toLowerCase(),
-    idCountry: payload.type === 'whatsapp' ? payload.idCountry : null,
-    label: payload.label || null,
-  });
+  const contact = await AcopioContact.create(buildContactAttributes(idAcopio, payload));
 
   const created = await AcopioContact.findByPk(contact.id, {
     include: [{ model: Country, as: 'country' }],
@@ -888,15 +920,7 @@ export async function updateContact(idAcopio: number, idContact: number, payload
     }
   }
 
-  await contact.update({
-    type: payload.type,
-    value:
-      payload.type === 'whatsapp'
-        ? String(payload.value).replace(/\D/g, '')
-        : payload.value.toLowerCase(),
-    idCountry: payload.type === 'whatsapp' ? payload.idCountry : null,
-    label: payload.label || null,
-  });
+  await contact.update(buildContactAttributes(idAcopio, payload));
 
   const updated = await AcopioContact.findByPk(contact.id, {
     include: [{ model: Country, as: 'country' }],

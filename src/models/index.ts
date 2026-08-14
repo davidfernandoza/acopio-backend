@@ -111,9 +111,11 @@ export class AcopioContact extends Model<
 > {
   declare id: CreationOptional<number>;
   declare idAcopio: ForeignKey<Acopio['id']>;
-  declare type: 'whatsapp' | 'email';
+  declare type: 'whatsapp' | 'email' | 'landline';
   declare value: string;
   declare idCountry: ForeignKey<Country['id']> | null;
+  declare localPrefix: string | null;
+  declare extension: string | null;
   declare label: string | null;
 }
 
@@ -329,9 +331,11 @@ AcopioContact.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     idAcopio: { type: DataTypes.INTEGER, allowNull: false, field: 'id_acopio' },
-    type: { type: DataTypes.ENUM('whatsapp', 'email'), allowNull: false },
+    type: { type: DataTypes.ENUM('whatsapp', 'email', 'landline'), allowNull: false },
     value: { type: DataTypes.STRING(180), allowNull: false },
     idCountry: { type: DataTypes.INTEGER, allowNull: true, field: 'id_country' },
+    localPrefix: { type: DataTypes.STRING(10), allowNull: true, field: 'local_prefix' },
+    extension: { type: DataTypes.STRING(20), allowNull: true },
     label: { type: DataTypes.STRING(120), allowNull: true },
   },
   { sequelize, tableName: 'acopio_contacts' }

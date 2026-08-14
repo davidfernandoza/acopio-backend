@@ -48,12 +48,22 @@ export const idAcopioAndIdUserParamsSchema = Joi.object({
 });
 
 const contactSchema = Joi.object({
-  type: Joi.string().valid('whatsapp', 'email').required(),
+  type: Joi.string().valid('whatsapp', 'email', 'landline').required(),
   value: Joi.string().trim().min(3).max(180).required(),
   idCountry: Joi.when('type', {
     is: 'whatsapp',
     then: Joi.number().integer().positive().required(),
     otherwise: Joi.valid(null).optional(),
+  }),
+  localPrefix: Joi.when('type', {
+    is: 'landline',
+    then: Joi.string().trim().min(1).max(10).required(),
+    otherwise: Joi.valid(null, '').optional(),
+  }),
+  extension: Joi.when('type', {
+    is: 'landline',
+    then: Joi.string().trim().max(20).allow(null, ''),
+    otherwise: Joi.valid(null, '').optional(),
   }),
   label: Joi.string().trim().max(120).allow(null, ''),
 }).custom((contactValue, helpers) => {
@@ -66,6 +76,17 @@ const contactSchema = Joi.object({
   if (contactValue.type === 'whatsapp') {
     const digitsOnly = String(contactValue.value).replace(/\D/g, '');
     if (digitsOnly.length < 7) {
+      return helpers.error('any.invalid');
+    }
+  }
+  if (contactValue.type === 'landline') {
+    const localPrefixDigits = String(contactValue.localPrefix || '').replace(/\D/g, '');
+    const phoneDigits = String(contactValue.value).replace(/\D/g, '');
+    const extensionDigits = String(contactValue.extension || '').replace(/\D/g, '');
+    if (localPrefixDigits.length < 1 || phoneDigits.length < 5) {
+      return helpers.error('any.invalid');
+    }
+    if (contactValue.extension && extensionDigits.length < 1) {
       return helpers.error('any.invalid');
     }
   }
